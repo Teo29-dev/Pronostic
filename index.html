@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+body{font-family:sans-serif;margin:0;padding:20px;text-align:center;background:#0a0a0a;color:#eee}
+h2{margin-top:0;font-size:22px}
+#box{border:2px solid #e10600;border-radius:12px;padding:12px;margin:14px 0;display:none}
+#lab{font-size:13px;letter-spacing:2px;color:#999}
+#t{font-size:38px;font-weight:bold;font-family:monospace;color:#fff;margin-top:6px}
+.urg{animation:b 1s infinite}
+@keyframes b{50%{opacity:.35}}
+button,input{width:100%;padding:14px;margin:6px 0;font-size:18px;border-radius:10px;border:1px solid #333;box-sizing:border-box}
+button{background:#e10600;color:#fff;border:0}
+input{background:#161616;color:#fff}
+#msg{margin-top:14px;font-size:18px}
+</style></head><body>
+<h2 id="q">Chargement…</h2>
+<div id="box"><div id="lab">⏳ FERMETURE DU DOSSIER DANS</div><div id="t">-- : -- : --</div></div>
+<div id="choices"></div>
+<div id="msg"></div>
+<script>
+const API="https://script.google.com/macros/s/AKfycbxpZTJLwWLKieDVUda8cXB2CJCaj-yJXq0hSfQOa6zz0bStvr8vlC-S-8e9vIm0wc6t/exec";
+const tg=Telegram.WebApp;tg.ready();tg.expand();
+try{tg.setBackgroundColor("#0a0a0a");tg.setHeaderColor("#0a0a0a")}catch(e){}
+const user=(tg.initDataUnsafe&&tg.initDataUnsafe.user)||{};
+const name=((user.first_name||"")+" "+(user.last_name||"")).trim()+(user.username?" @"+user.username:"");
+const $=id=>document.getElementById(id);
+let off=0,end=0,timer;
+function fmt(n){return String(n).padStart(2,"0")}
+function tick(){
+ const ms=end-(Date.now()+off);
+ if(ms<=0){clearInterval(timer);$("box").style.display="none";$("choices").innerHTML="";$("msg").textContent="Vote terminé ⛔";return}
+ const s=Math.floor(ms/1000);
+ $("t").textContent=fmt(Math.floor(s/3600))+" : "+fmt(Math.floor(s%3600/60))+" : "+fmt(s%60);
+ $("t").className=s<300?"urg":"";
+}
+async function send(answer){
+ if(!answer.trim())return;
+ $("msg").textContent="Envoi…";
+ const url=API+"?answer="+encodeURIComponent(answer)+"&id="+(user.id||"")+"&name="+encodeURIComponent(name);
+ const r=await(await fetch(url)).json();
+ $("msg").textContent=r.msg;
+ if(r.ok)setTimeout(()=>tg.close(),1200);
+}
+(async()=>{
+ const info=await(await fetch(API)).json();
+ $("q").textContent=info.question;
+ if(info.closed){$("msg").textContent="Vote terminé ⛔";return}
+ if(info.deadline){off=info.now-Date.now();end=info.deadline;$("box").style.display="block";tick();timer=setInterval(tick,1000)}
+ const box=$("choices");
+ if(info.options.length){
+  info.options.forEach(o=>{const b=document.createElement("button");b.textContent=o;b.onclick=()=>send(o);box.appendChild(b)});
+ }else{
+  box.innerHTML='<input id="a" placeholder="Ta réponse (ex : 3-1)"><button id="go">Envoyer</button>';
+  $("go").onclick=()=>send($("a").value);
+ }
+})().catch(()=>$("msg").textContent="Erreur, réessaie.");
+</script></body></html>
