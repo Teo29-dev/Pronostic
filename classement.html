@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+body{font-family:sans-serif;margin:0;padding:20px;background:var(--tg-theme-bg-color,#fff);color:var(--tg-theme-text-color,#000)}
+h2{text-align:center;margin-top:0}
+.r{display:flex;justify-content:space-between;padding:12px 8px;border-bottom:1px solid #8884;font-size:18px}
+.r b{min-width:40px}
+.n{flex:1;margin:0 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+</style></head><body>
+<h2 id="t">🏆 Classement</h2><div id="l">Chargement…</div>
+<script>
+const API="https://script.google.com/macros/s/AKfycbxpZTJLwWLKieDVUda8cXB2CJCaj-yJXq0hSfQOa6zz0bStvr8vlC-S-8e9vIm0wc6t/exec";
+const tg=Telegram.WebApp;tg.ready();tg.expand();
+const mois=["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+fetch(API+"?action=ranking").then(r=>r.json()).then(d=>{
+ document.getElementById("t").textContent="🏆 Classement de "+mois[Number(d.month.slice(5,7))-1];
+ const med=["🥇","🥈","🥉"];
+ document.getElementById("l").innerHTML=d.list.length?d.list.map((x,i)=>'<div class="r"><b>'+(med[i]||(i+1))+'</b><span class="n">'+esc(x.name)+'</span><span>'+x.pts+' pts</span></div>').join(""):"Pas encore de points ce mois-ci.";
+}).catch(()=>document.getElementById("l").textContent="Erreur, réessaie.");
+</script></body></html>
